@@ -1,0 +1,36 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "s3:ListBucket"
+      ],
+      "Resource": ["arn:aws:s3:::face-recognition-2018/*"]
+    },
+    {
+      "Effect":"Allow",
+      "Action":[
+        "dynamodb:DescribeStream",
+        "dynamodb:GetRecords",
+        "dynamodb:GetItem",
+        "dynamodb:PutItem",
+        "dynamodb:GetShardIterator",
+        "dynamodb:ListStreams"
+      ],
+      "Resource":"arn:aws:dynamodb:::table/face-recognition-2018/stream/*"
+    }
+  ]
+}
