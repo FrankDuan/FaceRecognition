@@ -22,12 +22,12 @@
   <tr><input type="file" name="fileToUpload1" id="fileToUpload1" accept="image/*">
   <label><font color = "#999">Name</font></label> <input type = "text" id = "myText"/>
   <input type = "button" value = "submit" id="submit1"/></tr>
-  <p id="p1"><font color = "#999"> </font></p>
+  <p id="p1"></p>
   <H1><font color = "#999">Face Recognition</font></H1>
   <tr><input type="file" name="fileToUpload2" id="fileToUpload2" accept="image/*">
   <input type = "submit" value = "submit" id="submit2">
   <label><font color = "#999">Who is this</font></label><input type = "text" id = "outputName"/></tr>
-  <p id="p2"><font color = "#999"> </font></p>
+  <p id="p2"></p>
 </body>
 <script>
 
@@ -46,51 +46,28 @@
     var file = control.files[0];
     // Load base64 encoded image 
     var reader = new FileReader();
-    reader.onload = (function (theFile) {
-      return function (e) {
-        var img = document.createElement('img');
-        var image = null;
-        img.src = e.target.result;
-        var jpg = true;
-        try {
-          image = atob(e.target.result.split("data:image/jpeg;base64,")[1]);
-
-        } catch (e) {
-          jpg = false;
-        }
-        if (jpg == false) {
-          try {
-            image = atob(e.target.result.split("data:image/png;base64,")[1]);
-          } catch (e) {
-            alert("Not an image file Rekognition can process");
-            return;
-          }
-        }
-        //unencode image bytes for Rekognition DetectFaces API 
-        var length = image.length;
-        imageBytes = new ArrayBuffer(length);
-        var ua = new Uint8Array(imageBytes);
-        for (var i = 0; i < length; i++) {
-          ua[i] = image.charCodeAt(i);
-        }
+    reader.onload = function (theFile) {
+		var srcData = theFile.target.result;
+		var myJSON = JSON.stringify({ name: name1, type: "jpg", data:srcData});
+		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user";
         //Call Rekognition  
         $.ajax(
-		  {type :"PUT",
-		   url: "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user",
-		   data: { name: name1, type: "jpg", data: imageBytes },
+		  {
+		   type : "POST",
+		   url: URL,
+		   name: name1,
+		   data: myJSON,
 		   dataType: "json",
-		   success: function(status){
-			   $("#p1").html(status);
-			   document.getElementById("opResult").innerHTML = "succeed!";
+		   success: function(result){
+                $("#p1").html("<font color = red> Succeed! </font>");
 	       },
-		   error: function(error){
-			   console.log('Error ${error}');
-			   document.getElementById("opResult").innerHTML = "failed!";
+		   error: function(status){
+			    $("#p1").html("<font color = red> Failed! </font>");
 		   },
 		  }
 		  );
-      };
-    })(file);
+      
+    };
     reader.readAsDataURL(file);
   }
   function queryDB(){
@@ -98,49 +75,28 @@
     var file = control.files[0];
     // Load base64 encoded image 
     var reader = new FileReader();
-    reader.onload = (function (theFile) {
-      return function (e) {
-        var img = document.createElement('img');
-        var image = null;
-        img.src = e.target.result;
-        var jpg = true;
-        try {
-          image = atob(e.target.result.split("data:image/jpeg;base64,")[1]);
-
-        } catch (e) {
-          jpg = false;
-        }
-        if (jpg == false) {
-          try {
-            image = atob(e.target.result.split("data:image/png;base64,")[1]);
-          } catch (e) {
-            alert("Not an image file Rekognition can process");
-            return;
-          }
-        }
-        //unencode image bytes for Rekognition DetectFaces API 
-        var length = image.length;
-        imageBytes = new ArrayBuffer(length);
-        var ua = new Uint8Array(imageBytes);
-        for (var i = 0; i < length; i++) {
-          ua[i] = image.charCodeAt(i);
-        }
+    reader.onload = function (theFile) {
+		var srcData = theFile.target.result;
+		var myJSON = JSON.stringify({ type: "jpg", data:srcData});
+		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-get-user";
         //Call Rekognition  
         $.ajax(
-		  {type : "GET",
-		   url: "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-get-user",
-		   data: { type: "jpg", data: imageBytes },
+		  {
+		   type : "POST",
+		   url: URL,
+		   data: myJSON,
 		   dataType: "json",
 		   success: function(result){
-                $("#p2").html(result);
+			    document.getElementById("outputName").innerHTML = JSON.stringify(result);
+                $("#p2").html("<font color = red> Succeed! </font>");
 	       },
 		   error: function(status){
-			    $("#p2").html(status);
+			    $("#p2").html("<font color = red> Failed! </font>");
 		   },
 		  }
 		  );
-      };
-    })(file);
+      
+    };
     reader.readAsDataURL(file);
   }
   function clearText(){
@@ -203,7 +159,6 @@
         var jpg = true;
         try {
           image = atob(e.target.result.split("data:image/jpeg;base64,")[1]);
-
         } catch (e) {
           jpg = false;
         }
