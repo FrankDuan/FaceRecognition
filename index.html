@@ -4,24 +4,148 @@
   <script src="aws-cognito-sdk.min.js"></script>
   <script src="amazon-cognito-identity.min.js"></script>
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.16.0.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="./app.js"></script>
   <meta charset="UTF-8">
   <title>Rekognition</title>
 </head>
 
-<body>
-  <H1>Face Analysis</H1>
-  <input type="file" name="fileToUpload" id="fileToUpload" accept="image/*">
-  <input type = "submit" value = "submit" id="submit">
-  <p id="opResult"></p>
+<body background = "digitalFace.jpg">
+  <h1> <font color = "blue">Let me tell you who you are!</font></h1>
+  <H1><font color = "#999">Face Analysis</font></H1>
+  <tr><input type="file" name="fileToUpload" id="fileToUpload" accept="image/*"/>
+  <input type = "submit" value = "submit" id="submit"/>
+  <input type = "button" value = "clear" onclick = "clearText()"/></tr>
+  <br>
+  <textarea rows="20" cols=50" id="opResult"></textarea>
+  <H1><font color = "#999">Add Face To The Database</font></H1>
+  <tr><input type="file" name="fileToUpload1" id="fileToUpload1" accept="image/*">
+  <label><font color = "#999">Name</font></label> <input type = "text" id = "myText"/>
+  <input type = "button" value = "submit" id="submit1"/></tr>
+  <p id="p1"><font color = "#999"> </font></p>
+  <H1><font color = "#999">Face Recognition</font></H1>
+  <tr><input type="file" name="fileToUpload2" id="fileToUpload2" accept="image/*">
+  <input type = "submit" value = "submit" id="submit2">
+  <label><font color = "#999">Who is this</font></label><input type = "text" id = "outputName"/></tr>
+  <p id="p2"><font color = "#999"> </font></p>
 </body>
 <script>
 
   document.getElementById("submit").addEventListener("click", function (event) {
     ProcessImage();
   }, false);
-  
-  //Calls DetectFaces API and shows estimated ages of detected faces
+  document.getElementById("submit1").addEventListener("click", function (event) {
+    addToDB();
+  }, false);
+   document.getElementById("submit2").addEventListener("click", function (event) {
+    queryDB();
+  }, false);
+  function addToDB(){
+	var name1 = document.getElementById("myText").value;
+    var control = document.getElementById("fileToUpload1");
+    var file = control.files[0];
+    // Load base64 encoded image 
+    var reader = new FileReader();
+    reader.onload = (function (theFile) {
+      return function (e) {
+        var img = document.createElement('img');
+        var image = null;
+        img.src = e.target.result;
+        var jpg = true;
+        try {
+          image = atob(e.target.result.split("data:image/jpeg;base64,")[1]);
+
+        } catch (e) {
+          jpg = false;
+        }
+        if (jpg == false) {
+          try {
+            image = atob(e.target.result.split("data:image/png;base64,")[1]);
+          } catch (e) {
+            alert("Not an image file Rekognition can process");
+            return;
+          }
+        }
+        //unencode image bytes for Rekognition DetectFaces API 
+        var length = image.length;
+        imageBytes = new ArrayBuffer(length);
+        var ua = new Uint8Array(imageBytes);
+        for (var i = 0; i < length; i++) {
+          ua[i] = image.charCodeAt(i);
+        }
+        //Call Rekognition  
+        $.ajax(
+		  {type :"POST",
+		   url: "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user",
+		   data: { name: name1, type: "jpg", data: imageBytes },
+		   dataType: "json",
+		   success: function(status){
+			   $("#p1").html(status);
+			   document.getElementById("opResult").innerHTML = "succeed!";
+	       },
+		   error: function(xhr,ajaxOptions,thrownError){
+			   alert(thrownError);
+			   document.getElementById("opResult").innerHTML = "failed!";
+		   },
+		  }
+		  );
+      };
+    })(file);
+    reader.readAsDataURL(file);
+  }
+  function queryDB(){
+    var control = document.getElementById("fileToUpload2");
+    var file = control.files[0];
+    // Load base64 encoded image 
+    var reader = new FileReader();
+    reader.onload = (function (theFile) {
+      return function (e) {
+        var img = document.createElement('img');
+        var image = null;
+        img.src = e.target.result;
+        var jpg = true;
+        try {
+          image = atob(e.target.result.split("data:image/jpeg;base64,")[1]);
+
+        } catch (e) {
+          jpg = false;
+        }
+        if (jpg == false) {
+          try {
+            image = atob(e.target.result.split("data:image/png;base64,")[1]);
+          } catch (e) {
+            alert("Not an image file Rekognition can process");
+            return;
+          }
+        }
+        //unencode image bytes for Rekognition DetectFaces API 
+        var length = image.length;
+        imageBytes = new ArrayBuffer(length);
+        var ua = new Uint8Array(imageBytes);
+        for (var i = 0; i < length; i++) {
+          ua[i] = image.charCodeAt(i);
+        }
+        //Call Rekognition  
+        $.ajax(
+		  {type : "GET",
+		   url: "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-get-user",
+		   data: { type: "jpg", data: imageBytes },
+		   dataType: "json",
+		   success: function(result){
+                $("#p2").html(result);
+	       },
+		   error: function(status){
+			    $("#p2").html(status);
+		   },
+		  }
+		  );
+      };
+    })(file);
+    reader.readAsDataURL(file);
+  }
+  function clearText(){
+      document.getElementById("opResult").innerHTML = "";
+  }
   function DetectFaces(imageData) {
     AWS.region = "us-east-1";
     var rekognition = new AWS.Rekognition();
@@ -36,30 +160,29 @@
     rekognition.detectFaces(params, function (err, data) {
       if (err) console.log(err, err.stack); // an error occurred
       else {
-       var table = "<table>";
+       var table = "";
         // show each face and build out estimated age table
         for (var i = 0; i < data.FaceDetails.length; i++) {
-          table += '<tr><td> Age: </td>' + '<td>' + data.FaceDetails[i].AgeRange.Low +
-            '-' + data.FaceDetails[i].AgeRange.High + '</td></tr>';
-	      table += '<tr><td> Eyeglasses: </td>' + '<td>' + data.FaceDetails[i].Eyeglasses.Value +
-            '-' + data.FaceDetails[i].Eyeglasses.Confidence.toFixed(2) + '%</td></tr>';
-		  table += '<tr><td> Gender: </td>' + '<td>' + data.FaceDetails[i].Gender.Value +
-            '-' + data.FaceDetails[i].Gender.Confidence.toFixed(2) + '%</td></tr>';
-		  table += '<tr><td> Emotions: </td></tr>';
-		  table += '<tr><td>' + data.FaceDetails[i].Emotions[0].Type +
-            '-' + data.FaceDetails[i].Emotions[0].Confidence.toFixed(2) + '%</td></tr>';
-		  table += '<tr><td>' + data.FaceDetails[i].Emotions[1].Type +
-            '-' + data.FaceDetails[i].Emotions[1].Confidence.toFixed(2) + '%</td></tr>';
-		  table += '<tr><td>' + data.FaceDetails[i].Emotions[2].Type +
-            '-' + data.FaceDetails[i].Emotions[2].Confidence.toFixed(2) + '%</td></tr>';
-	      table += '<tr><td>' + data.FaceDetails[i].Emotions[3].Type +
-            '-' + data.FaceDetails[i].Emotions[3].Confidence.toFixed(2) + '%</td></tr>';
-		  table += '<tr><td>' + data.FaceDetails[i].Emotions[4].Type +
-            '-' + data.FaceDetails[i].Emotions[4].Confidence.toFixed(2) + '%</td></tr>';
-	      table += '<tr><td>' + data.FaceDetails[i].Emotions[5].Type +
-            '-' + data.FaceDetails[i].Emotions[5].Confidence.toFixed(2) + '%</td></tr>';
+          table += 'Age:' + data.FaceDetails[i].AgeRange.Low +
+            '-' + data.FaceDetails[i].AgeRange.High + '\n';
+	      table += 'Eyeglasses: ' + data.FaceDetails[i].Eyeglasses.Value +
+            '-' + data.FaceDetails[i].Eyeglasses.Confidence.toFixed(2)+'%\n';
+		  table += 'Gender: '+ data.FaceDetails[i].Gender.Value +
+            '-' + data.FaceDetails[i].Gender.Confidence.toFixed(2)+'%\n'+'\n';
+		  table += 'Emotions: ' + '\n';
+		  table += '   ' + data.FaceDetails[i].Emotions[0].Type +
+            '-' + data.FaceDetails[i].Emotions[0].Confidence.toFixed(2)+'%\n';
+		  table += '   ' + data.FaceDetails[i].Emotions[1].Type +
+            '-' + data.FaceDetails[i].Emotions[1].Confidence.toFixed(2)+'%\n';
+		  table += '   ' + data.FaceDetails[i].Emotions[2].Type +
+            '-' + data.FaceDetails[i].Emotions[2].Confidence.toFixed(2) + '%\n';
+	      table += '   ' + data.FaceDetails[i].Emotions[3].Type +
+            '-' + data.FaceDetails[i].Emotions[3].Confidence.toFixed(2) + '%\n';
+		  table += '   ' + data.FaceDetails[i].Emotions[4].Type +
+            '-' + data.FaceDetails[i].Emotions[4].Confidence.toFixed(2) + '%\n';
+	      table += '   ' + data.FaceDetails[i].Emotions[5].Type +
+            '-' + data.FaceDetails[i].Emotions[5].Confidence.toFixed(2) + '%\n';
         }
-        table += "</table>";
         document.getElementById("opResult").innerHTML = table;
       }
     });
