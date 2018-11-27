@@ -75,7 +75,7 @@
         }
         //Call Rekognition  
         $.ajax(
-		  {type :"POST",
+		  {type :"PUT",
 		   url: "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user",
 		   data: { name: name1, type: "jpg", data: imageBytes },
 		   dataType: "json",
@@ -83,8 +83,8 @@
 			   $("#p1").html(status);
 			   document.getElementById("opResult").innerHTML = "succeed!";
 	       },
-		   error: function(xhr,ajaxOptions,thrownError){
-			   alert(thrownError);
+		   error: function(error){
+			   console.log('Error ${error}');
 			   document.getElementById("opResult").innerHTML = "failed!";
 		   },
 		  }
