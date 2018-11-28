@@ -25,9 +25,10 @@
   <p id="p1"></p>
   <H1><font color = "#999">Face Recognition</font></H1>
   <tr><input type="file" name="fileToUpload2" id="fileToUpload2" accept="image/*">
-  <input type = "submit" value = "submit" id="submit2">
+  <input type = "submit" value = "submit" id="submit2"/>
   <label><font color = "#999">Who is this</font></label><input type = "text" id = "outputName"/></tr>
-  <p id="p2"></p>
+  <p id="p2"><tr><font color = red> I don't know what to do </font></tr></p>
+  <input type = "text" id = "trigger"><input type = "submit" value = "Tell us" id ="submit3"/>
 </body>
 <script>
 
@@ -40,6 +41,53 @@
    document.getElementById("submit2").addEventListener("click", function (event) {
     queryDB();
   }, false);
+  document.getElementById("submit3").addEventListener("click", function (event) {
+    addToDBAgain();;
+  }, false);
+  function addToDBAgain(){
+    var name1 = document.getElementById("trigger").value;
+    var control = document.getElementById("fileToUpload2");
+    var file = control.files[0];
+    // Load base64 encoded image 
+    var reader = new FileReader();
+    reader.onload = function (theFile) {
+		var srcData = null;
+		var jpg = true;
+        try {
+          srcData = theFile.target.result.split("data:image/jpeg;base64,")[1];
+        } catch (e) {
+          jpg = false;
+        }
+        if (jpg == false) {
+          try {
+            srcData = theFile.target.result.split("data:image/png;base64,")[1];
+          } catch (e) {
+            alert("Not an image file Rekognition can process");
+            return;
+          }
+        }
+		var myJSON = JSON.stringify({ name: name1, type: "jpg", data:srcData});
+		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user";
+        //Call Rekognition  
+        $.ajax(
+		  {
+		   type : "POST",
+		   url: URL,
+		   name: name1,
+		   data: myJSON,
+		   dataType: "json",
+		   success: function(result){
+                  document.getElementById("p2").innerHTML = "<tr><font color = red> Succeed! </font></tr>";
+	       },
+		   error: function(status){
+			      document.getElementById("p2").innerHTML = "<tr><font color = red> Succeed! </font></tr>";
+		   },
+		  }
+		  );
+
+	};
+	  reader.readAsDataURL(file);
+  }
   function addToDB(){
 	var name1 = document.getElementById("myText").value;
     var control = document.getElementById("fileToUpload1");
@@ -85,7 +133,6 @@
     reader.readAsDataURL(file);
   }
   function queryDB(){
-    var name1 = document.getElementById("myText").value;
     var control = document.getElementById("fileToUpload2");
     var file = control.files[0];
     // Load base64 encoded image 
@@ -106,18 +153,24 @@
             return;
           }
         }
-		var myJSON = JSON.stringify({ name: name1, type: "jpg", data:srcData});
+		var myJSON = JSON.stringify({data:srcData});
 		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user";
         //Call Rekognition  
         $.ajax(
 		  {
-		   type : "GET",
+		   type : "POST",
 		   url: URL,
-		   name: name1,
 		   data: myJSON,
 		   dataType: "json",
 		   success: function(result){
-                $("#p2").html("<font color = red> Succeed! </font>");
+			    if(result.name != null){
+			        document.getElementById("outputName").value = result.name;
+                    document.getElementById("p2").innerHTML = "<tr><font color = red> Succeed! </font></tr>";
+				}
+				else{
+					 document.getElementById("p2").innerHTML = "<tr><font color = red> Please tell us your name, we appreciate it!</font></tr>";
+					 document.getElementById("outputName").value = "Sorry, I don't know." 
+				}
 	       },
 		   error: function(status){
 			    $("#p2").html("<font color = red> Failed! </font>");
