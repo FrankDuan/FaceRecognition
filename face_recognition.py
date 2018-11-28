@@ -88,6 +88,14 @@ def update_record(body):
 
 
 def create_record(body):
+    '''
+    If the name is not contained in the body, we will use the data to match
+    all the images in the lib and find one matches the input data.
+    Else, we will create a record according to the the data and the name
+    '''
+    if 'name' not in body:
+        return get_record(body)
+    
     obj = bucket.Object(body['name'])
     data = base64.b64decode(body['data'])
     obj.put(Body=data)
