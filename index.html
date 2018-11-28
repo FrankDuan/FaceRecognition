@@ -47,7 +47,21 @@
     // Load base64 encoded image 
     var reader = new FileReader();
     reader.onload = function (theFile) {
-		var srcData = theFile.target.result;
+		var srcData = null;
+		var jpg = true;
+        try {
+          srcData = theFile.target.result.split("data:image/jpeg;base64,")[1];
+        } catch (e) {
+          jpg = false;
+        }
+        if (jpg == false) {
+          try {
+            srcData = theFile.target.result.split("data:image/png;base64,")[1];
+          } catch (e) {
+            alert("Not an image file Rekognition can process");
+            return;
+          }
+        }
 		var myJSON = JSON.stringify({ name: name1, type: "jpg", data:srcData});
 		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user";
         //Call Rekognition  
@@ -71,23 +85,38 @@
     reader.readAsDataURL(file);
   }
   function queryDB(){
+    var name1 = document.getElementById("myText").value;
     var control = document.getElementById("fileToUpload2");
     var file = control.files[0];
     // Load base64 encoded image 
     var reader = new FileReader();
     reader.onload = function (theFile) {
-		var srcData = theFile.target.result;
-		var myJSON = JSON.stringify({ type: "jpg", data:srcData});
-		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-get-user";
+		var srcData = null;
+		var jpg = true;
+        try {
+          srcData = theFile.target.result.split("data:image/jpeg;base64,")[1];
+        } catch (e) {
+          jpg = false;
+        }
+        if (jpg == false) {
+          try {
+            srcData = theFile.target.result.split("data:image/png;base64,")[1];
+          } catch (e) {
+            alert("Not an image file Rekognition can process");
+            return;
+          }
+        }
+		var myJSON = JSON.stringify({ name: name1, type: "jpg", data:srcData});
+		var URL = "https://32cr6t0aoh.execute-api.us-east-1.amazonaws.com/default/lambda-create-user";
         //Call Rekognition  
         $.ajax(
 		  {
-		   type : "POST",
+		   type : "GET",
 		   url: URL,
+		   name: name1,
 		   data: myJSON,
 		   dataType: "json",
 		   success: function(result){
-			    document.getElementById("outputName").innerHTML = JSON.stringify(result);
                 $("#p2").html("<font color = red> Succeed! </font>");
 	       },
 		   error: function(status){
